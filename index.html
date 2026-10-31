@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doctor Faustus</title>
+<script>document.documentElement.className += " js";</script>
+<style>
+/* ==========================================================================
+   The Tragical History of Doctor Faustus - presentation deck (9 slides, about 5 minutes)
+   Hellfire-and-parchment aesthetic. Fully offline: system fonts only, no CDN,
+   no external asset, no framework.
+
+   Geometry: one fixed 16:9 design canvas of 100u x 56.25u, where
+   1u = min(1vw, 1.7778vh). Every size is expressed in u, so the deck scales
+   to any window without reflow or scrolling. Slide selection uses :target,
+   so the deck still works with JavaScript disabled.
+
+   Keys: Right/Space = next, Left = back, Home/End, N = speaker notes.
+   ========================================================================== */
+
+:root {
+  --uu: min(1vw, 1.7778vh);
+  --u:  var(--uu);
+
+  --bg:        #0c0806;
+  --bg-2:      #130c09;
+  --panel:     #1a120e;
+  --panel-2:   #221812;
+  --line:      #3a2a20;
+  --line-2:    #54402f;
+
+  --text:      #f1e6cf;
+  --muted:     #b3a18a;
+  --faint:     #7a6a58;
+
+  --gold:      #d9ac55;
+  --gold-dim:  #6e5426;
+  --ember:     #e8743a;
+  --red:       #d2412e;
+  --red-dim:   #6b2a1f;
+  --heaven:    #8fb3dc;
+  --heaven-dim:#33506e;
+  --violet:    #b08ad8;
+
+  --font-serif: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%; overflow: hidden;
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%; text-size-adjust: 100%;
+}
+
+.deck {
+  position: fixed; inset: 0; overflow: hidden;
+  background:
+    radial-gradient(90% 55% at 50% 118%, rgba(210,65,46,.34) 0%, rgba(232,116,58,.10) 38%, rgba(12,8,6,0) 70%),
+    radial-gradient(70% 60% at 50% -20%, rgba(217,172,85,.10) 0%, rgba(12,8,6,0) 60%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
+}
+/* faint parchment ruling */
+.deck::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, rgba(217,172,85,.035) 0 1px, transparent 1px calc(3 * var(--uu)));
+  -webkit-mask-image: radial-gradient(100% 90% at 50% 40%, #000 20%, transparent 85%);
+          mask-image: radial-gradient(100% 90% at 50% 40%, #000 20%, transparent 85%);
+}
+/* rising sparks */
+.sparks { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.sparks i { position: absolute; bottom: -2%; width: calc(.35 * var(--uu)); height: calc(.35 * var(--uu));
+  border-radius: 50%; background: var(--ember); box-shadow: 0 0 calc(1 * var(--uu)) var(--ember);
+  opacity: 0; animation: spark 9s linear infinite; }
+.sparks i:nth-child(1) { left: 8%;  animation-delay: 0s; }
+.sparks i:nth-child(2) { left: 21%; animation-delay: 3.1s; animation-duration: 11s; }
+.sparks i:nth-child(3) { left: 37%; animation-delay: 5.6s; }
+.sparks i:nth-child(4) { left: 55%; animation-delay: 1.7s; animation-duration: 12s; }
+.sparks i:nth-child(5) { left: 69%; animation-delay: 6.4s; }
+.sparks i:nth-child(6) { left: 82%; animation-delay: 2.5s; animation-duration: 10s; }
+.sparks i:nth-child(7) { left: 93%; animation-delay: 7.8s; }
+@keyframes spark {
+  0%   { transform: translate(0, 0); opacity: 0; }
+  10%  { opacity: .8; }
+  60%  { opacity: .35; }
+  100% { transform: translate(calc(3 * var(--uu)), calc(-45 * var(--uu))); opacity: 0; }
+}
+
+/* --- slides -------------------------------------------------------------- */
+.slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; z-index: 2;
+  transition: none;
+  transform: translateY(calc(0.8 * var(--u)));
+}
+/* Without JavaScript: select the slide via the URL hash. Rules are kept
+   separate so a browser without :has() does not drop the whole list. */
+html:not(.js) .slide:target { opacity: 1; visibility: visible; transform: none; z-index: 3; }
+html:not(.js) .deck:not(:has(.slide:target)) #slide-01 { opacity: 1; visibility: visible; transform: none; z-index: 3; }
+/* With JavaScript: exactly one slide carries .active. Only the incoming
+   slide fades in; the outgoing one disappears at once, so text never overlaps. */
+html.js .slide.active {
+  opacity: 1; visibility: visible; transform: none; z-index: 3;
+  transition: opacity 360ms ease, transform 360ms ease;
+}
+.deck[data-standalone] .slide { opacity: 1; visibility: visible; transform: none; z-index: 3; }
+
+.stage {
+  position: relative;
+  width: calc(100 * var(--uu)); height: calc(56.25 * var(--uu));
+  padding: calc(4 * var(--u)) calc(5.5 * var(--u)) calc(4.2 * var(--u));
+  display: flex; flex-direction: column; gap: calc(1.6 * var(--u));
+  overflow: hidden;
+}
+
+.slide-no { position: absolute; top: calc(2 * var(--uu)); right: calc(3 * var(--uu));
+  font-family: var(--font-serif); font-size: calc(1.1 * var(--uu)); color: var(--faint); letter-spacing: .14em; }
+.kicker { font-family: var(--font-serif); font-size: calc(1.2 * var(--u)); color: var(--gold);
+  letter-spacing: .26em; text-transform: uppercase; }
+h1, h2, h3 { margin: 0; font-family: var(--font-serif); font-weight: 700; letter-spacing: 0; }
+h1 { font-size: calc(5.8 * var(--u)); line-height: 1.02; }
+h2 { font-size: calc(3.2 * var(--u)); line-height: 1.12; margin-top: calc(-0.8 * var(--u)); }
+h3 { font-size: calc(1.75 * var(--u)); }
+p, li, td, th { font-size: calc(1.55 * var(--u)); line-height: 1.45; }
+p { margin: 0; }
+.lede { font-size: calc(1.85 * var(--u)); color: #e3d5bb; max-width: calc(80 * var(--u)); }
+.muted { color: var(--muted); }
+.serif { font-family: var(--font-serif); }
+em { font-style: normal; color: var(--gold); }
+.accent { color: var(--gold); }
+.fire { color: var(--ember); }
+.bad { color: var(--red); }
+.sky { color: var(--heaven); }
+.grow { flex: 1; min-height: 0; }
+.cols.grow { align-content: center; }
+
+ul.clean { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: calc(0.9 * var(--u)); }
+ul.clean li { position: relative; padding-left: calc(2 * var(--u)); }
+ul.clean li::before { content: ""; position: absolute; left: 0; top: .55em;
+  width: calc(0.7 * var(--u)); height: calc(0.7 * var(--u)); transform: rotate(45deg); background: var(--gold); }
+ul.clean.x li::before { background: var(--red); }
+ul.clean.s li::before { background: var(--heaven); }
+
+.cols { display: grid; gap: calc(2.2 * var(--u)); }
+.c-2 { grid-template-columns: 1fr 1fr; }
+.c-3 { grid-template-columns: repeat(3, 1fr); }
+.c-4 { grid-template-columns: repeat(4, 1fr); }
+.c-5 { grid-template-columns: repeat(5, 1fr); }
+.c-6-4 { grid-template-columns: 6fr 4fr; }
+.c-4-6 { grid-template-columns: 4fr 6fr; }
+
+.card { background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  border: 1px solid var(--line); border-radius: calc(0.6 * var(--u));
+  padding: calc(1.6 * var(--u)) calc(1.8 * var(--u));
+  display: flex; flex-direction: column; gap: calc(0.7 * var(--u)); }
+.card p, .card li { font-size: calc(1.4 * var(--u)); color: #dccdb2; }
+.card.g { border-color: var(--gold-dim);  box-shadow: inset 0 calc(0.3 * var(--u)) 0 var(--gold); }
+.card.r { border-color: var(--red-dim);   box-shadow: inset 0 calc(0.3 * var(--u)) 0 var(--red); }
+.card.f { border-color: #6b3d22;          box-shadow: inset 0 calc(0.3 * var(--u)) 0 var(--ember); }
+.card.s { border-color: var(--heaven-dim);box-shadow: inset 0 calc(0.3 * var(--u)) 0 var(--heaven); }
+.card.v { border-color: #4b3a63;          box-shadow: inset 0 calc(0.3 * var(--u)) 0 var(--violet); }
+
+.chip { display: inline-block; font-size: calc(1.05 * var(--u));
+  padding: calc(0.25 * var(--u)) calc(0.8 * var(--u)); border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--muted); letter-spacing: .06em; white-space: nowrap; }
+.card .chip { align-self: flex-start; }
+.chip.g { color: var(--gold);   border-color: var(--gold-dim);   background: rgba(217,172,85,.08); }
+.chip.r { color: var(--red);    border-color: var(--red-dim);    background: rgba(210,65,46,.08); }
+.chip.s { color: var(--heaven); border-color: var(--heaven-dim); background: rgba(143,179,220,.08); }
+
+/* flow of boxes with arrows */
+.flow { display: flex; align-items: stretch; gap: calc(1 * var(--u)); }
+.flow .node { flex: 1; background: var(--panel); border: 1px solid var(--line-2);
+  border-radius: calc(0.6 * var(--u)); padding: calc(1.4 * var(--u));
+  display: flex; flex-direction: column; gap: calc(0.5 * var(--u)); text-align: center; justify-content: center; }
+.flow .node b { font-family: var(--font-serif); font-size: calc(1.65 * var(--u)); }
+.flow .node span { font-size: calc(1.25 * var(--u)); color: var(--muted); line-height: 1.35; }
+.flow .arrow { align-self: center; color: var(--gold); font-size: calc(2.4 * var(--u)); font-family: var(--font-serif); }
+.node.hot { border-color: var(--red); box-shadow: 0 0 calc(2 * var(--u)) rgba(210,65,46,.22); }
+.node.ok  { border-color: var(--gold-dim); box-shadow: 0 0 calc(2 * var(--u)) rgba(217,172,85,.14); }
+
+/* quotation scroll (replaces the terminal of the earlier deck) */
+.scroll { position: relative; background: linear-gradient(180deg, #241913, #1a120d);
+  border: 1px solid var(--line-2); border-left: calc(0.4 * var(--u)) solid var(--gold);
+  border-radius: calc(0.6 * var(--u)); padding: calc(1.8 * var(--u)) calc(2.4 * var(--u));
+  font-family: var(--font-serif); font-style: italic; font-size: calc(2 * var(--u)); line-height: 1.5; color: #f3e7cd; }
+.scroll.r { border-left-color: var(--red); }
+.scroll.s { border-left-color: var(--heaven); }
+.scroll cite { display: block; margin-top: calc(0.8 * var(--u)); font-style: normal; font-family: var(--font-ui);
+  font-size: calc(1.15 * var(--u)); color: var(--muted); letter-spacing: .08em; }
+.bigquote { font-family: var(--font-serif); font-style: italic; font-size: calc(4 * var(--u)); line-height: 1.2;
+  color: var(--text); text-align: center; }
+.bigquote .q { color: var(--gold); }
+
+/* tables */
+table { border-collapse: collapse; width: 100%; }
+th { text-align: left; color: var(--muted); font-weight: 600; font-size: calc(1.2 * var(--u));
+  letter-spacing: .08em; text-transform: uppercase; border-bottom: 1px solid var(--line-2);
+  padding: calc(0.6 * var(--u)) calc(0.8 * var(--u)); }
+td { border-bottom: 1px solid var(--line); padding: calc(0.7 * var(--u)) calc(0.8 * var(--u));
+  font-size: calc(1.4 * var(--u)); vertical-align: top; }
+td.k { font-family: var(--font-serif); font-weight: 700; color: var(--gold); white-space: nowrap; }
+
+/* big numbers */
+.stat { display: flex; flex-direction: column; gap: calc(0.3 * var(--u)); }
+.stat .n { font-family: var(--font-serif); font-size: calc(5 * var(--u)); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .l { font-size: calc(1.3 * var(--u)); color: var(--muted); }
+
+/* timeline */
+.timeline { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: calc(1.2 * var(--u));
+  padding-top: calc(2.6 * var(--u)); }
+.timeline::before { content: ""; position: absolute; left: 0; right: 0; top: calc(0.9 * var(--u)); height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--ember), var(--red)); }
+.timeline .ev { position: relative; display: flex; flex-direction: column; gap: calc(0.4 * var(--u)); }
+.timeline .ev::before { content: ""; position: absolute; top: calc(-2.2 * var(--u)); left: 0;
+  width: calc(1.2 * var(--u)); height: calc(1.2 * var(--u)); border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--gold); }
+.timeline .ev b { font-family: var(--font-serif); font-size: calc(1.6 * var(--u)); }
+.timeline .ev span { font-size: calc(1.3 * var(--u)); color: var(--muted); line-height: 1.35; }
+
+/* scales: ambition vs result */
+.versus { display: grid; grid-template-columns: 1fr auto 1fr; gap: calc(1.6 * var(--u)); align-items: center; }
+.versus .mid { font-family: var(--font-serif); font-size: calc(3 * var(--u)); color: var(--ember); }
+
+/* title slide */
+.hero { display: flex; flex-direction: column; gap: calc(1.6 * var(--u)); }
+.hero .rule { width: calc(10 * var(--u)); height: calc(0.4 * var(--u)); background: linear-gradient(90deg, var(--gold), var(--red)); border-radius: 2px; }
+.hero .sub { font-family: var(--font-serif); font-style: italic; font-size: calc(1.8 * var(--u)); color: var(--muted); }
+
+svg.dg { width: 100%; height: 100%; }
+svg.dg text { font-family: var(--font-serif); fill: var(--text); font-size: 13px; }
+svg.dg .m { fill: var(--muted); font-size: 11px; }
+
+.rise { animation: rise 560ms ease both; }
+.d1 { animation-delay: 90ms; } .d2 { animation-delay: 180ms; } .d3 { animation-delay: 270ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(calc(0.8 * var(--u))); } to { opacity: 1; transform: none; } }
+.flicker { animation: flicker 3.2s ease-in-out infinite; }
+@keyframes flicker { 0%,100% { opacity: 1; } 45% { opacity: .82; } 50% { opacity: .95; } 70% { opacity: .78; } }
+
+.note { font-size: calc(1.2 * var(--u)); color: var(--faint); }
+
+/* speaker notes (press N) */
+aside.notes { display: none; }
+.notes-panel { position: fixed; left: 50%; bottom: calc(3.6 * var(--uu)); transform: translateX(-50%);
+  width: min(92vw, calc(80 * var(--uu))); z-index: 20; display: none;
+  background: rgba(20,13,10,.96); border: 1px solid var(--gold-dim); border-radius: calc(0.6 * var(--uu));
+  padding: calc(1.2 * var(--uu)) calc(1.8 * var(--uu)); box-shadow: 0 calc(1 * var(--uu)) calc(4 * var(--uu)) rgba(0,0,0,.6);
+  font-size: calc(1.3 * var(--uu)); line-height: 1.5; color: #e8dcc3; }
+.notes-panel b { display: block; font-size: calc(1 * var(--uu)); color: var(--gold); letter-spacing: .2em;
+  text-transform: uppercase; margin-bottom: calc(0.4 * var(--uu)); font-weight: 600; }
+body.show-notes .notes-panel { display: block; }
+
+/* chrome */
+.chrome { position: fixed; left: 0; right: 0; bottom: 0; height: 3px; z-index: 10; background: rgba(255,255,255,.04); }
+.chrome i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width 300ms ease; }
+.counter, .brand { position: fixed; bottom: calc(1.2 * var(--uu)); z-index: 10;
+  font-family: var(--font-serif); font-size: calc(1.05 * var(--uu)); color: var(--faint); letter-spacing: .12em; }
+.counter { right: calc(3 * var(--uu)); }
+.brand { left: calc(3 * var(--uu)); }
+.deck[data-standalone] ~ .chrome, .deck[data-standalone] ~ .counter, .deck[data-standalone] ~ .brand { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .slide, .rise, .flicker, .sparks i { transition: none; animation: none; }
+}
+@media print {
+  html, body { overflow: visible; height: auto; }
+  .deck { position: static; }
+  .slide { position: relative; opacity: 1; visibility: visible; transform: none; page-break-after: always; height: 100vh; }
+  .chrome, .counter, .brand, .sparks, .notes-panel { display: none !important; }
+}
+</style>
+</head>
+<body>
+<main class="deck" id="deck">
+<div class="sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<!-- ====================================================================== 01 -->
+<section class="slide" id="slide-01">
+  <div class="stage">
+    <div class="cols c-6-4 grow" style="align-items:center;">
+      <div class="hero">
+        <div class="kicker rise">English Literature &nbsp;&middot;&nbsp; Elizabethan Drama</div>
+        <h1 class="rise d1">The Tragedy of<br><span class="accent flicker">Doctor Faustus</span></h1>
+        <div class="rule"></div>
+        <div class="sub rise d2">by Christopher Marlowe</div>
+        <p class="lede rise d3">A brilliant scholar sells his soul to the Devil for 24 years of
+          power &mdash; and then has to pay the price.</p>
+      </div>
+      <div style="height:calc(36*var(--u));" class="rise d2">
+        <svg class="dg" viewBox="0 0 300 360" aria-hidden="true">
+          <defs>
+            <linearGradient id="flame" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0" stop-color="#d2412e"/><stop offset=".6" stop-color="#e8743a"/><stop offset="1" stop-color="#d9ac55"/>
+            </linearGradient>
+          </defs>
+          <!-- contract scroll -->
+          <rect x="60" y="40" width="180" height="250" rx="6" fill="#e9d8b4" opacity=".92"/>
+          <rect x="50" y="30" width="200" height="18" rx="9" fill="#c9b285"/>
+          <rect x="50" y="282" width="200" height="18" rx="9" fill="#c9b285"/>
+          <text x="150" y="80" text-anchor="middle" style="font-size:15px;font-style:italic;fill:#3a2414">On these conditions</text>
+          <g stroke="#7a5a3c" stroke-width="1.4" opacity=".7">
+            <line x1="82" y1="100" x2="218" y2="100"/><line x1="82" y1="116" x2="218" y2="116"/>
+            <line x1="82" y1="132" x2="210" y2="132"/><line x1="82" y1="148" x2="218" y2="148"/>
+            <line x1="82" y1="164" x2="196" y2="164"/><line x1="82" y1="180" x2="218" y2="180"/>
+          </g>
+          <text x="150" y="222" text-anchor="middle" style="font-size:12px;fill:#5a3a22">signed in blood:</text>
+          <path d="M92 250 C 110 230, 128 262, 146 244 S 182 236, 206 250" stroke="#9c1f14" stroke-width="3" fill="none"/>
+          <circle cx="204" cy="262" r="4" fill="#9c1f14"/>
+          <!-- flame -->
+          <path d="M150 360 C 100 340, 108 300, 130 290 C 126 310, 140 318, 146 300 C 150 284, 168 280, 162 262 C 190 286, 200 340, 150 360 Z" fill="url(#flame)" class="flicker"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Good morning everyone. Today I am going to talk about Doctor Faustus, a famous English play
+    by Christopher Marlowe. It is the story of a man who makes a deal with the Devil. Let's see why he does it
+    and what happens to him.</aside>
+</section>
+
+<!-- ====================================================================== 02 -->
+<section class="slide" id="slide-02">
+  <div class="stage">
+    <div class="slide-no">02 / 09</div>
+    <div class="kicker">The Writer &amp; the Play</div>
+    <h2>Christopher Marlowe (1564 &ndash; 1593)</h2>
+    <div class="cols c-6-4 grow">
+      <div style="display:flex;flex-direction:column;gap:calc(1.4*var(--u));">
+        <p class="lede">Born in Canterbury in the <em>same year as Shakespeare</em>. He studied at
+          Cambridge and became one of the most exciting playwrights in London.</p>
+        <ul class="clean">
+          <li>Other plays: <i>Tamburlaine</i>, <i>The Jew of Malta</i>, <i>Edward II</i></li>
+          <li>Ben Jonson praised "Marlowe's mighty line"</li>
+          <li>People said he was an atheist and possibly a government spy</li>
+          <li>Killed in Deptford, London, stabbed above the eye at only <b>29</b></li>
+        </ul>
+      </div>
+      <div class="card g">
+        <table>
+          <tr><td class="k">Written</td><td>c. 1588 &ndash; 1592</td></tr>
+          <tr><td class="k">On stage</td><td>first record 1594, the Rose Theatre</td></tr>
+          <tr><td class="k">Printed</td><td>1604 (A-text), 1616 (B-text)</td></tr>
+          <tr><td class="k">Source</td><td>German legend of a real magician, Johann Faust</td></tr>
+          <tr><td class="k">Setting</td><td>Wittenberg, Rome, the Emperor's court</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Marlowe was born in 1564, the same year as Shakespeare. He had a short and dangerous life,
+    and he died in a fight when he was only 29. He wrote Doctor Faustus around 1590. The story comes from a
+    German legend about a real magician called Johann Faust.</aside>
+</section>
+
+<!-- ====================================================================== 03 -->
+<section class="slide" id="slide-03">
+  <div class="stage">
+    <div class="slide-no">03 / 09</div>
+    <div class="kicker">Act 1 &middot; The Choice</div>
+    <h2>"I have studied everything... and it is not enough"</h2>
+    <p class="lede">In his study, Faustus looks at every university subject and rejects them one by one.</p>
+    <div class="cols c-5 grow" style="align-items:stretch;">
+      <div class="card"><span class="chip">Logic</span><p>"Is, to dispute well, logic's chiefest end?" He can already argue well.</p></div>
+      <div class="card"><span class="chip">Medicine</span><p>Whole cities escaped the plague thanks to him, but he cannot make men live forever.</p></div>
+      <div class="card"><span class="chip">Law</span><p>"This study fits a mercenary drudge." Only good for money.</p></div>
+      <div class="card s"><span class="chip s">Theology</span><p>"The reward of sin is death." He stops reading <b>before</b> the promise of God's forgiveness.</p></div>
+      <div class="card r"><span class="chip r">Magic</span><p>"A sound magician is a mighty god." He chooses power.</p></div>
+    </div>
+    <p class="note">He reads only half of each Bible verse, so he misses the message of mercy. This is his first self-deception.</p>
+  </div>
+  <aside class="notes">At the start, Faustus is bored with normal knowledge. Look at theology: he reads only
+    half of the Bible verse. The next part says God gives eternal life and forgives. He does not see it.
+    So he chooses magic, because for him magic means power.</aside>
+</section>
+
+<!-- ====================================================================== 04 -->
+<section class="slide" id="slide-04">
+  <div class="stage">
+    <div class="slide-no">04 / 09</div>
+    <div class="kicker">The Pact</div>
+    <h2>A contract signed in blood</h2>
+    <div class="flow grow" style="max-height:calc(20*var(--u));">
+      <div class="node ok"><b>1 &middot; The deal</b><span>Mephistopheles will serve him for 24 years</span></div>
+      <div class="arrow">&rarr;</div>
+      <div class="node"><b>2 &middot; The price</b><span>He gives "both body and soul" to Lucifer</span></div>
+      <div class="arrow">&rarr;</div>
+      <div class="node"><b>3 &middot; Blood</b><span>He cuts his arm, but his blood <b>congeals</b> &mdash; a warning</span></div>
+      <div class="arrow">&rarr;</div>
+      <div class="node"><b>4 &middot; "Homo, fuge"</b><span>"Man, fly!" appears on his arm</span></div>
+      <div class="arrow">&rarr;</div>
+      <div class="node hot"><b>5 &middot; Signed</b><span>Devils bring crowns and rich clothes to delight him</span></div>
+    </div>
+    <div class="cols c-2">
+      <div class="scroll r">Consummatum est. <cite>"It is finished" &mdash; Faustus, after signing. These are Christ's last words on the cross.</cite></div>
+      <div class="card"><h3>Why does it matter?</h3>
+        <p>Even his own body tries to stop him. Faustus is not tricked &mdash; he <b>chooses</b> with open eyes.</p></div>
+    </div>
+  </div>
+  <aside class="notes">This is the key scene. Faustus gets 24 years of power, and he gives his body and soul to
+    Lucifer. When he cuts his arm, his blood stops flowing. Then the Latin words "Homo, fuge", which mean
+    "man, fly", appear on his arm. He sees all these warnings, but he signs anyway.</aside>
+</section>
+
+<!-- ====================================================================== 05 -->
+<section class="slide" id="slide-05">
+  <div class="stage">
+    <div class="slide-no">05 / 09</div>
+    <div class="kicker">Mephistopheles</div>
+    <h2>An honest devil</h2>
+    <div class="cols c-6-4 grow" style="align-items:center;">
+      <div style="display:flex;flex-direction:column;gap:calc(1.6*var(--u));">
+        <div class="scroll r" style="font-size:calc(2.6*var(--u));">Why, this is hell, nor am I out of it.
+          <cite>Mephistopheles</cite></div>
+        <div class="scroll">Hell hath no limits, nor is circumscrib'd<br>In one self place; for where we are is hell.
+          <cite>Mephistopheles</cite></div>
+      </div>
+      <div class="card r"><h3>What does he mean?</h3>
+        <p>For Mephistopheles, hell is not only a place of fire. Hell is <b>being far from God</b>.</p>
+        <p>He even says: "O, Faustus, leave these frivolous demands." But Faustus answers: "I think hell's a fable."</p>
+        <p class="note">Irony: the devil tells the truth, and the human does not listen.</p></div>
+    </div>
+  </div>
+  <aside class="notes">Mephistopheles is not a typical monster. He is sad and honest. He says he is always in
+    hell, because he has lost God. He even warns Faustus to stop. But Faustus thinks hell is just a story.
+    This is a great example of dramatic irony.</aside>
+</section>
+
+<!-- ====================================================================== 06 -->
+<section class="slide" id="slide-06">
+  <div class="stage">
+    <div class="slide-no">06 / 09</div>
+    <div class="kicker">The 24 Years</div>
+    <h2>Great power... for small tricks</h2>
+    <div class="versus">
+      <div class="card g"><h3>What he dreamed of</h3>
+        <p>To be "great emperor of the world" and to "wall all Germany with brass".</p></div>
+      <div class="mid">&rarr;</div>
+      <div class="card r"><h3>What he actually did</h3>
+        <p>Played jokes on the Pope, entertained an emperor, and tricked a horse dealer.</p></div>
+    </div>
+    <div class="timeline grow">
+      <div class="ev"><b>The Sins</b><span>Lucifer shows him the Seven Deadly Sins like a show</span></div>
+      <div class="ev"><b>Rome</b><span>Invisible, he snatches the Pope's food and hits him</span></div>
+      <div class="ev"><b>The Emperor</b><span>He raises the spirit of Alexander the Great</span></div>
+      <div class="ev"><b>The Horse-courser</b><span>He sells a horse that turns into a bundle of hay</span></div>
+      <div class="ev"><b>Helen of Troy</b><span>"Sweet Helen, make me immortal with a kiss."</span></div>
+    </div>
+  </div>
+  <aside class="notes">This is the sad irony of the play. Faustus wanted to rule the world. But with his power he
+    only does small, silly things: jokes, magic shows and tricks. At the end he calls Helen of Troy and asks
+    her for a kiss to make him immortal. He wastes his 24 years.</aside>
+</section>
+
+<!-- ====================================================================== 07 -->
+<section class="slide" id="slide-07">
+  <div class="stage">
+    <div class="slide-no">07 / 09</div>
+    <div class="kicker">The Final Hour</div>
+    <h2>Eleven o'clock... midnight</h2>
+    <div class="cols c-4-6 grow" style="align-items:center;">
+      <div style="height:calc(30*var(--u));">
+        <svg class="dg" viewBox="0 0 300 300" aria-hidden="true">
+          <circle cx="150" cy="150" r="128" fill="#1a120e" stroke="#d9ac55" stroke-width="3"/>
+          <circle cx="150" cy="150" r="114" fill="none" stroke="#3a2a20" stroke-width="1"/>
+          <!-- last hour, from 11 to 12, glowing red -->
+          <path d="M150 150 L 93 51 A 114 114 0 0 1 150 36 Z" fill="#d2412e" opacity=".55" class="flicker"/>
+          <g text-anchor="middle" style="font-size:20px;fill:#f1e6cf">
+            <text x="150" y="58">XII</text><text x="246" y="157">III</text>
+            <text x="150" y="256">VI</text><text x="54" y="157">IX</text>
+            <text x="98" y="78" style="font-size:15px">XI</text>
+          </g>
+          <line x1="150" y1="150" x2="150" y2="70" stroke="#d9ac55" stroke-width="5" stroke-linecap="round"/>
+          <line x1="150" y1="150" x2="112" y2="86" stroke="#e8743a" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="150" cy="150" r="7" fill="#d9ac55"/>
+          <text x="150" y="294" text-anchor="middle" class="m">"one bare hour to live"</text>
+        </svg>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:calc(1.4*var(--u));">
+        <div class="scroll r">The stars move still, time runs, the clock will strike,<br>
+          The devil will come, and Faustus must be damn'd.<cite>Faustus, final soliloquy</cite></div>
+        <ul class="clean x">
+          <li>He asks the heavens to stop so that midnight never comes</li>
+          <li>"See, see, where Christ's blood streams in the firmament!"</li>
+          <li>He wants the earth to open, or his soul to become "little water-drops"</li>
+          <li>His last words: <i>"I'll burn my books! Ah, Mephistophilis!"</i> Then the devils take him.</li>
+          <li>In the 1616 text, his friends find "Faustus' limbs, / All torn asunder" the next morning.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">In the last scene Faustus is alone, with only one hour to live. He begs time to stop. He
+    sees Christ's blood in the sky, but he feels he cannot reach it. He wants to hide, and he even promises to
+    burn his books. But it is too late. At midnight the devils take him away. In the longer 1616 version,
+    his friends find his body torn to pieces the next morning.</aside>
+</section>
+
+<!-- ====================================================================== 08 -->
+<section class="slide" id="slide-08">
+  <div class="stage">
+    <div class="slide-no">08 / 09</div>
+    <div class="kicker">Themes</div>
+    <h2>The big ideas</h2>
+    <div class="cols c-4 grow">
+      <div class="card f"><h3>Ambition &amp; pride</h3>
+        <p>Faustus wants to be more than a human. His pride, his tragic flaw, destroys him.</p></div>
+      <div class="card g"><h3>Knowledge vs. power</h3>
+        <p>He says he wants knowledge, but he really wants power, pleasure and fame.</p></div>
+      <div class="card s"><h3>Sin &amp; repentance</h3>
+        <p>The Good Angel and the Old Man tell him to repent. He never truly does.</p></div>
+      <div class="card v"><h3>Free will</h3>
+        <p>Is he a victim of fate, or a man who makes his own choices? The play leaves this open.</p></div>
+    </div>
+    <div class="scroll" style="font-size:calc(1.8*var(--u));">His waxen wings did mount above his reach,
+      And, melting, heavens conspir'd his overthrow.<cite>The Chorus, Prologue &mdash; Faustus is compared to Icarus</cite></div>
+  </div>
+  <aside class="notes">There are four main themes: ambition, knowledge and power, sin and repentance, and free
+    will. At the beginning, the Chorus compares Faustus to Icarus, the boy in Greek mythology who flew too
+    close to the sun with wings made of wax. Too much ambition can destroy you.</aside>
+</section>
+
+<!-- ====================================================================== 09 -->
+<section class="slide" id="slide-09">
+  <div class="stage">
+    <div class="slide-no">09 / 09</div>
+    <div class="kicker">Conclusion</div>
+    <h2>Why Faustus still matters</h2>
+    <div class="cols c-6-4 grow" style="align-items:center;">
+      <div class="scroll r" style="font-size:calc(2.2*var(--u));">Cut is the branch that might have grown full straight,<br>
+        And burned is Apollo's laurel-bough.<cite>The Chorus, Epilogue &mdash; a great talent, wasted</cite></div>
+      <div class="card g"><h3>A "Faustian bargain"</h3>
+        <p>Today this English expression means a deal where you get what you want now,
+          but lose something much more important later.</p>
+        <p class="note">The story lives on, for example in Goethe's <i>Faust</i> (Part One, 1808).</p></div>
+    </div>
+    <h1 style="font-size:calc(4.2*var(--u));text-align:center;">Thank you! &nbsp;<span class="accent">Any questions?</span></h1>
+  </div>
+  <aside class="notes">At the end, the Chorus says Faustus was like a branch that could grow straight, but it was
+    cut. He had great talent, but he wasted it. Today we still use the phrase "Faustian bargain". So the
+    question for all of us is: what would you give for success? Thank you for listening. Any questions?</aside>
+</section>
+
+</main>
+
+<div class="chrome" aria-hidden="true"><i id="progressBar"></i></div>
+<div class="counter" id="slideCounter">01 / 09</div>
+<div class="notes-panel" id="notesPanel" aria-live="polite"><b>Speaker notes &middot; N to hide</b><span id="notesText"></span></div>
+
+<script>
+(function () {
+  "use strict";
+  var deck = document.getElementById("deck");
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var total = slides.length;
+  var bar = document.getElementById("progressBar");
+  var counter = document.getElementById("slideCounter");
+  var notesText = document.getElementById("notesText");
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+  function fromHash() {
+    var m = /^#slide-(\d+)$/.exec(location.hash);
+    var n = m ? parseInt(m[1], 10) : 1;
+    return Math.min(Math.max(n, 1), total);
+  }
+
+  var cur = fromHash();
+  function current() { return cur; }
+
+  function go(n) {
+    cur = Math.min(Math.max(n, 1), total);
+    try { history.replaceState(null, "", "#slide-" + pad(cur)); } catch (e) { /* sandboxed viewer */ }
+    update();
+  }
+
+  /* Shrink the content unit of a slide whose content overflows its stage. */
+  function autofit(slide) {
+    var stage = slide.querySelector(".stage");
+    if (!stage) return;
+    stage.style.removeProperty("--u");
+    var scale = 1;
+    for (var i = 0; i < 8 && stage.scrollHeight > stage.clientHeight + 1; i++) {
+      scale -= 0.05;
+      stage.style.setProperty("--u", "calc(var(--uu) * " + scale.toFixed(2) + ")");
+    }
+  }
+
+  function update() {
+    var n = current();
+    slides.forEach(function (s, i) { s.classList.toggle("active", i === n - 1); });
+    if (bar) bar.style.width = (100 * n / total) + "%";
+    if (counter) counter.textContent = pad(n) + " / " + pad(total);
+    var notes = slides[n - 1].querySelector("aside.notes");
+    if (notesText) notesText.textContent = notes ? notes.textContent.replace(/\s+/g, " ").trim() : "";
+    autofit(slides[n - 1]);
+  }
+
+  if (deck.hasAttribute("data-standalone")) { slides.forEach(autofit); return; }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    switch (e.key) {
+      case "ArrowRight": case "PageDown": case " ": go(current() + 1); break;
+      case "ArrowLeft": case "PageUp": go(current() - 1); break;
+      case "Home": go(1); break;
+      case "End": go(total); break;
+      case "n": case "N": document.body.classList.toggle("show-notes"); break;
+      default: return;
+    }
+    e.preventDefault();
+  });
+
+  var touchX = null;
+  document.addEventListener("touchstart", function (e) { touchX = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 50) go(current() + (dx < 0 ? 1 : -1));
+    touchX = null;
+  });
+
+  window.addEventListener("hashchange", function () { cur = fromHash(); update(); });
+  window.addEventListener("resize", update);
+  window.deck = { go: go, next: function () { go(current() + 1); }, prev: function () { go(current() - 1); },
+                  current: current, total: total };
+  update();
+})();
+</script>
+</body>
+</html>
