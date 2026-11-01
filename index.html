@@ -294,6 +294,21 @@ svg.dg .stop.end { stroke: var(--red); }
 svg.dg .num { font-size: 20px; font-weight: 700; fill: var(--gold); }
 svg.dg .lab { font-size: 18px; }
 svg.dg .part { font-size: 14px; fill: var(--muted); letter-spacing: .08em; }
+/* slide-02 character card art (additive) */
+.card.has-art { position: relative; overflow: hidden; }
+.card.has-art > .card-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  object-position: right center; z-index: 0; opacity: .7; border-radius: inherit; pointer-events: none; }
+.card.has-art::before { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(26,18,14,.92) 0%, rgba(26,18,14,.84) 45%, rgba(26,18,14,.40) 68%, rgba(26,18,14,.05) 100%),
+              linear-gradient(90deg, rgba(26,18,14,.45) 0%, rgba(26,18,14,0) 55%); }
+.card.has-art::after { content: ""; position: absolute; left: 0; right: 0; top: 0; z-index: 3; pointer-events: none;
+  height: calc(0.3 * var(--u)); border-radius: calc(0.6 * var(--u)) calc(0.6 * var(--u)) 0 0; background: transparent; }
+.card.has-art.g::after { background: var(--gold); }
+.card.has-art.r::after { background: var(--red); }
+.card.has-art.f::after { background: var(--ember); }
+.card.has-art.s::after { background: var(--heaven); }
+.card.has-art.v::after { background: var(--violet); }
+.card.has-art > :not(.card-art) { position: relative; z-index: 2; }
 </style>
 </head>
 <body>
@@ -351,14 +366,14 @@ svg.dg .part { font-size: 14px; fill: var(--muted); letter-spacing: .08em; }
     <div class="kicker">Main Characters</div>
     <h2>Who is who?</h2>
     <div class="cols c-4 grow" style="align-content:stretch;">
-      <div class="card g"><h3>Doctor Faustus</h3><p>Scholar from Rhode. Studies magic and gives his soul to Lucifer.</p></div>
-      <div class="card r"><h3>Mephistophilis</h3><p>Devil and Lucifer&rsquo;s servant. Serves Faustus for 24 years.</p></div>
-      <div class="card f"><h3>Lucifer</h3><p>Mephistophilis&rsquo;s master. Was an angel once; God threw him into hell.</p></div>
-      <div class="card s"><h3>Good angel &amp; bad angel</h3><p>Argue about his choices: repent or go on.</p></div>
-      <div class="card"><h3>Wagner</h3><p>Faustus&rsquo;s servant. Believes Faustus has left everything to him.</p></div>
-      <div class="card v"><h3>Valdes &amp; Cornelius</h3><p>Friends who study magic. They teach him.</p></div>
-      <div class="card s"><h3>The Old Man</h3><p>Asks Faustus to repent. His faith is strong.</p></div>
-      <div class="card"><h3>The two scholars</h3><p>Old friends from the university. They pray for him.</p></div>
+      <div class="card g has-art"><img class="card-art" src="img/characters/faustus.svg" alt="" aria-hidden="true"><h3>Doctor Faustus</h3><p>Scholar from Rhode. Studies magic and gives his soul to Lucifer.</p></div>
+      <div class="card r has-art"><img class="card-art" src="img/characters/mephistophilis.svg" alt="" aria-hidden="true"><h3>Mephistophilis</h3><p>Devil and Lucifer&rsquo;s servant. Serves Faustus for 24 years.</p></div>
+      <div class="card f has-art"><img class="card-art" src="img/characters/lucifer.svg" alt="" aria-hidden="true"><h3>Lucifer</h3><p>Mephistophilis&rsquo;s master. Was an angel once; God threw him into hell.</p></div>
+      <div class="card s has-art"><img class="card-art" src="img/characters/angels.svg" alt="" aria-hidden="true"><h3>Good angel &amp; bad angel</h3><p>Argue about his choices: repent or go on.</p></div>
+      <div class="card has-art"><img class="card-art" src="img/characters/wagner.svg" alt="" aria-hidden="true"><h3>Wagner</h3><p>Faustus&rsquo;s servant. Believes Faustus has left everything to him.</p></div>
+      <div class="card v has-art"><img class="card-art" src="img/characters/valdes-cornelius.svg" alt="" aria-hidden="true"><h3>Valdes &amp; Cornelius</h3><p>Friends who study magic. They teach him.</p></div>
+      <div class="card s has-art"><img class="card-art" src="img/characters/old-man.svg" alt="" aria-hidden="true"><h3>The Old Man</h3><p>Asks Faustus to repent. His faith is strong.</p></div>
+      <div class="card has-art"><img class="card-art" src="img/characters/scholars.svg" alt="" aria-hidden="true"><h3>The two scholars</h3><p>Old friends from the university. They pray for him.</p></div>
     </div>
   </div>
   <aside class="notes">Let me introduce the main characters. Doctor Faustus is an ambitious scholar who wants power.
