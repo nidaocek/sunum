@@ -1408,7 +1408,7 @@ html:not(.js) .s8-bgs { display: none; }
 #slide-10 .s10-sw, #slide-10 .s10-lick { transform-origin: 80px 97px; transform-box: view-box; }
 #slide-10 .s10-sw { transform: translateY(100px); }
 #slide-10 .s10-hh, #slide-10 .s10-mh { transform-origin: 150px 150px; transform-box: view-box; }
-#slide-10 .s10-face, #slide-10 .s10-ring, #slide-10 .s10-halo, #slide-10 .s10-capbg { opacity: 0; }
+#slide-10 .s10-face, #slide-10 .s10-ring, #slide-10 .s10-halo { opacity: 0; }
 #slide-10 .s10-em { opacity: 0; }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1421,7 +1421,6 @@ html:not(.js) .s8-bgs { display: none; }
   #slide-10.active .s10-pad::before { animation: s10-pad 15s linear infinite both; }
   #slide-10.active .s10-face { animation: s10-glow 15s linear infinite both; }
   #slide-10.active .s10-ring, #slide-10.active .s10-halo { animation: s10-glow2 15s linear infinite both; }
-  #slide-10.active .s10-capbg { animation: s10-capbg 15s linear infinite both; }
   #slide-10.active .s10-sw1 { animation: s10-sw1 15s linear infinite both; }
   #slide-10.active .s10-sw2 { animation: s10-sw2 15s linear infinite both; }
   #slide-10.active .s10-sw3 { animation: s10-sw3 15s linear infinite both; }
@@ -1457,7 +1456,6 @@ html:not(.js) .s8-bgs { display: none; }
 @keyframes s10-pad   { 0%, 56.4% { opacity: 0; } 58.7% { opacity: .96; } 82% { opacity: .96; } 84.5% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes s10-glow  { 0%, 56.4% { opacity: 0; } 61% { opacity: .85; } 78% { opacity: .85; } 84% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes s10-glow2 { 0%, 56.4% { opacity: 0; } 61% { opacity: 1; } 78% { opacity: 1; } 84% { opacity: 0; } 100% { opacity: 0; } }
-@keyframes s10-capbg { 0%, 56.4% { opacity: 0; } 58.7% { opacity: .96; } 82% { opacity: .96; } 84.5% { opacity: 0; } 100% { opacity: 0; } }
 @keyframes s10-sw1 { 0%, 56.67% { transform: translateY(100px); animation-timing-function: cubic-bezier(.2,.7,.3,1); }
   64% { transform: translateY(0); } 76.7% { transform: translateY(0); animation-timing-function: ease-in; } 84% { transform: translateY(100px); } 100% { transform: translateY(100px); } }
 @keyframes s10-sw2 { 0%, 58% { transform: translateY(100px); animation-timing-function: cubic-bezier(.2,.7,.3,1); }
@@ -1866,6 +1864,7 @@ html.js #slide-01.active .s1-credit-name { animation: s1-shine 5.5s linear 1.5s 
             <radialGradient id="s10-halo" cx="150" cy="150" r="158" gradientUnits="userSpaceOnUse">
               <stop offset=".78" stop-color="#e8743a" stop-opacity=".62"/><stop offset=".84" stop-color="#d2412e" stop-opacity=".34"/><stop offset="1" stop-color="#d2412e" stop-opacity="0"/>
             </radialGradient>
+            <radialGradient id="s10-cap" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#0c0806"/><stop offset=".62" stop-color="#0c0806" stop-opacity=".97"/><stop offset=".82" stop-color="#0c0806" stop-opacity=".6"/><stop offset="1" stop-color="#0c0806" stop-opacity="0"/></radialGradient>
           </defs>
           <circle class="s10-halo" cx="150" cy="150" r="158" fill="url(#s10-halo)"/>
           <circle cx="150" cy="150" r="128" fill="#1a120e" stroke="#d9ac55" stroke-width="3"/>
@@ -1882,8 +1881,8 @@ html.js #slide-01.active .s1-credit-name { animation: s1-shine 5.5s linear 1.5s 
           <line class="s10-mh" x1="150" y1="150" x2="150" y2="72" stroke="#d9ac55" stroke-width="3" stroke-linecap="round"/>
           <line class="s10-hh" id="s10-hh" x1="150" y1="150" x2="122" y2="102" stroke="#e8743a" stroke-width="8" stroke-linecap="round"/>
           <circle cx="150" cy="150" r="7" fill="#d9ac55"/>
-          <rect class="s10-capbg" x="46" y="278" width="208" height="24" rx="12" fill="#0c0806"/>
-          <text x="150" y="294" text-anchor="middle" class="m">&ldquo;Just one hour!&rdquo;</text>
+          <ellipse class="s10-capbg" cx="150" cy="290" rx="58" ry="17" fill="url(#s10-cap)"/>
+          <text x="150" y="294" text-anchor="middle" class="m" data-nokeep="1">&ldquo;Just one hour!&rdquo;</text>
         </svg>
       </div>
       <ul class="clean x s10-pad">
@@ -2213,7 +2212,7 @@ html.js #slide-01.active .s1-credit-name { animation: s1-shine 5.5s linear 1.5s 
       while ((n = w.nextNode())) {
         if (!n.nodeValue.trim()) continue;
         var el = n.parentElement;
-        if (!el || el.closest("aside.notes, script, style") || onOpaque(el, roots[i][1])) continue;
+        if (!el || el.closest("aside.notes, script, style, [data-nokeep]") || onOpaque(el, roots[i][1])) continue;
         var cs = getComputedStyle(el), svg = el.closest("svg");
         var lt = lumOf(svg ? cs.fill : cs.color), s = lt > 0.5 ? KEEP_BRIGHT : (lt > 0.25 ? KEEP_MUTED : KEEP_DIM);
         var rg = document.createRange(); rg.selectNodeContents(n);
