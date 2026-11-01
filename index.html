@@ -692,10 +692,15 @@ svg.dg .part { font-size: 14px; fill: var(--muted); letter-spacing: .08em; }
 .a7k31{--an:a7k31}
 @keyframes a7k32{0%{opacity:0}5%{opacity:1}93.3%{opacity:1}100%{opacity:0}}
 .a7k32{--an:a7k32}
+/* rising background fire (additive): one shared low-resolution canvas, behind sparks and slides */
+.bgfire { position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; z-index: 0;
+  pointer-events: none; opacity: 0; visibility: hidden; }
+@media print { .bgfire { display: none !important; } }
 </style>
 </head>
 <body>
 <main class="deck" id="deck">
+<canvas class="bgfire" id="bgfire" width="192" height="108" aria-hidden="true"></canvas>
 <div class="sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 
 <!-- ====================================================================== 01 -->
@@ -1204,6 +1209,256 @@ svg.dg .part { font-size: 14px; fill: var(--muted); letter-spacing: .08em; }
     else if (mq.addListener) mq.addListener(onMq);
   }
   sync(true);
+})();
+</script>
+<script>
+/* Rising background fire (additive). One shared low-resolution canvas, drawn only while the level is above 0.
+   Level table below: one row per slide (index 0 = slide 1). Tune the numbers here. */
+(function () {
+  "use strict";
+  var cv = document.getElementById("bgfire");
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  if (!ctx) return;
+
+  /* Per slide: [ flameHeight, opacity, activity, tint, density ]
+       flameHeight : maximum tongue height as a fraction of the viewport height (0.40 = 40 percent)
+       opacity     : opacity of the whole fire layer, 0..1 (this is the "how faint" knob)
+       activity    : flicker / rise speed multiplier (1 = calm)
+       tint        : faint warm tint over the whole page, 0..1
+       density     : flame body density multiplier (1 = normal)
+     Slide 1 and slide 11 are all zeros: no fire, loop stopped. Slide 10 is the peak. */
+  var FIRE_LEVELS = [
+    [0.000, 0.00, 1.0, 0.0, 1.00],  /* 01 no fire */
+    [0.040, 0.14, 1.0, 0.0, 1.00],  /* 02 barely-there glow */
+    [0.087, 0.19, 1.0, 0.0, 1.00],  /* 03 */
+    [0.134, 0.24, 1.0, 0.0, 1.00],  /* 04 */
+    [0.181, 0.29, 1.0, 0.0, 1.00],  /* 05 */
+    [0.229, 0.34, 1.0, 0.0, 1.00],  /* 06 */
+    [0.276, 0.39, 1.0, 0.0, 1.00],  /* 07 */
+    [0.323, 0.44, 1.0, 0.0, 1.00],  /* 08 */
+    [0.370, 0.50, 1.0, 0.0, 1.00],  /* 09 clear background fire, tips near 35-40 percent */
+    [0.620, 0.95, 2.1, 0.6, 1.15],  /* 10 PEAK: raging hellfire, tips near 55-65 percent */
+    [0.000, 0.00, 1.0, 0.0, 1.00]   /* 11 fire out */
+  ];
+  var FADE_MS = 1600;     /* easing time between two levels */
+  var FRAME_MS = 28;      /* minimum time between draws (about 30 fps) */
+
+  /* how much of the fire is removed behind page-level text, by text brightness (0 none .. 1 all) */
+  var KEEP_BRIGHT = 0.35, KEEP_MUTED = 0.85, KEEP_DIM = 1.0;
+
+  var W = cv.width, H = cv.height;
+  var img = ctx.createImageData(W, H);
+  var px = img.data;
+  var mq = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
+
+  /* colour ramp (index 0..255): deep red, red, ember, a hint of gold; never white. Alpha ramp is separate. */
+  var LUTC = new Uint8Array(256 * 3), LUTA = new Uint8Array(256);
+  var MAXALPHA = 0.70;    /* alpha of the hottest pixel before the layer opacity is applied */
+  (function () {
+    var st = [[0, 107, 42, 31], [0.40, 210, 65, 46], [0.75, 232, 116, 58], [1, 228, 133, 65]];
+    for (var i = 0; i < 256; i++) {
+      var x = i / 255, j = 0;
+      while (j < st.length - 2 && x > st[j + 1][0]) j++;
+      var a = st[j], b = st[j + 1], t = Math.min(1, Math.max(0, (x - a[0]) / (b[0] - a[0])));
+      LUTC[i * 3] = a[1] + (b[1] - a[1]) * t;
+      LUTC[i * 3 + 1] = a[2] + (b[2] - a[2]) * t;
+      LUTC[i * 3 + 2] = a[3] + (b[3] - a[3]) * t;
+      LUTA[i] = Math.round(255 * MAXALPHA * Math.pow(x, 1.4));
+    }
+  })();
+
+  /* smooth tileable noise texture, 128 x 64 */
+  var TW = 128, TH = 64, TEX = new Float32Array(TW * TH);
+  (function () {
+    var seed = 20260311;
+    function rnd() { seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }
+    var sizes = [16, 8, 4], amps = [1, 0.5, 0.25], mn = 1e9, mx = -1e9, o, x, y;
+    for (o = 0; o < sizes.length; o++) {
+      var s = sizes[o], gw = TW / s, gh = TH / s, g = [];
+      for (x = 0; x < gw * gh; x++) g.push(rnd());
+      for (y = 0; y < TH; y++) for (x = 0; x < TW; x++) {
+        var fx = x / s, fy = y / s, ix = Math.floor(fx), iy = Math.floor(fy), tx = fx - ix, ty = fy - iy;
+        tx = tx * tx * (3 - 2 * tx); ty = ty * ty * (3 - 2 * ty);
+        var x0 = ix % gw, x1 = (ix + 1) % gw, y0 = iy % gh, y1 = (iy + 1) % gh;
+        var v = (g[y0 * gw + x0] * (1 - tx) + g[y0 * gw + x1] * tx) * (1 - ty) + (g[y1 * gw + x0] * (1 - tx) + g[y1 * gw + x1] * tx) * ty;
+        TEX[y * TW + x] += v * amps[o];
+      }
+    }
+    for (x = 0; x < TEX.length; x++) { if (TEX[x] < mn) mn = TEX[x]; if (TEX[x] > mx) mx = TEX[x]; }
+    for (x = 0; x < TEX.length; x++) TEX[x] = (TEX[x] - mn) / (mx - mn);
+  })();
+
+  /* Soft keep-out mask: the fire is thinned behind text that sits directly on the page (not on opaque cards). */
+  var mask = new Float32Array(W * H);
+  var MASK_MARGIN = 1.5, MASK_FEATHER = 6;   /* canvas pixels */
+  function lumOf(c) {
+    var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(c);
+    if (!m) return 1;
+    var r = [m[1], m[2], m[3]].map(function (v) { v = v / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+    return 0.2126 * r[0] + 0.7152 * r[1] + 0.0722 * r[2];
+  }
+  function onOpaque(el, stop) {
+    for (var a = el; a && a !== stop; a = a.parentElement) {
+      var m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(getComputedStyle(a).backgroundColor);
+      if (m && (m[4] === undefined || parseFloat(m[4]) >= 0.85)) return true;
+    }
+    return false;
+  }
+  function paintRect(r, s) {
+    var vw = window.innerWidth || 1, vh = window.innerHeight || 1, sx = W / vw, sy = H / vh;
+    var x0 = r.left * sx, x1 = r.right * sx, y0 = r.top * sy, y1 = r.bottom * sy, e = MASK_MARGIN + MASK_FEATHER;
+    var ya = Math.max(0, Math.floor(y0 - e)), yb = Math.min(H - 1, Math.ceil(y1 + e));
+    var xa = Math.max(0, Math.floor(x0 - e)), xb = Math.min(W - 1, Math.ceil(x1 + e));
+    for (var y = ya; y <= yb; y++) for (var x = xa; x <= xb; x++) {
+      var dx = Math.max(x0 - (x + 0.5), 0, (x + 0.5) - x1), dy = Math.max(y0 - (y + 0.5), 0, (y + 0.5) - y1);
+      var d = Math.sqrt(dx * dx + dy * dy), f = s * Math.min(1, Math.max(0, 1 - (d - MASK_MARGIN) / MASK_FEATHER));
+      if (f > mask[y * W + x]) mask[y * W + x] = f;
+    }
+  }
+  function buildMask() {
+    mask.fill(0);
+    var slide = document.querySelector(".slide.active");
+    var roots = [];
+    if (slide) roots.push([slide, slide.parentElement]);
+    var extra = document.querySelectorAll(".counter, .brand");
+    for (var i = 0; i < extra.length; i++) roots.push([extra[i], document.body]);
+    for (i = 0; i < roots.length; i++) {
+      var w = document.createTreeWalker(roots[i][0], NodeFilter.SHOW_TEXT), n;
+      while ((n = w.nextNode())) {
+        if (!n.nodeValue.trim()) continue;
+        var el = n.parentElement;
+        if (!el || el.closest("aside.notes, script, style") || onOpaque(el, roots[i][1])) continue;
+        var cs = getComputedStyle(el), svg = el.closest("svg");
+        var lt = lumOf(svg ? cs.fill : cs.color), s = lt > 0.5 ? KEEP_BRIGHT : (lt > 0.25 ? KEEP_MUTED : KEEP_DIM);
+        var rg = document.createRange(); rg.selectNodeContents(n);
+        var rs = rg.getClientRects();
+        for (var j = 0; j < rs.length; j++) if (rs[j].width > 1 && rs[j].height > 1) paintRect(rs[j], s);
+      }
+    }
+  }
+
+  var colH = new Float32Array(W), swayX = new Int16Array(H);
+
+  function draw(ph, lv) {
+    var hc = lv.h, x, y, o = 0;
+    for (x = 0; x < W; x++) {
+      var p = 0.5 + 0.5 * (0.5 * Math.sin(x * 0.09 + ph * 0.5 + 1.3) + 0.3 * Math.sin(x * 0.23 - ph * 0.8 + 4.1) + 0.2 * Math.sin(x * 0.51 + ph * 1.3));
+      colH[x] = hc * (0.35 + 0.65 * p);
+    }
+    for (y = 0; y < H; y++) swayX[y] = Math.round(3 * Math.sin(y * 0.11 + ph * 0.7));
+    var s1 = ph * 9, s2 = ph * 5, dens = 1.25 * lv.dens, tint = lv.tint, shift2 = 17 + Math.floor(ph * 2);
+    for (y = 0; y < H; y++) {
+      var v = (H - 1 - y + 0.5) / H;
+      var ty = y + s1, iy = Math.floor(ty), fy = ty - iy, r0 = (iy & 63) * TW, r1 = ((iy + 1) & 63) * TW;
+      var ty2 = y + s2 + 31, iy2 = Math.floor(ty2), fy2 = ty2 - iy2, q0 = (iy2 & 63) * TW, q1 = ((iy2 + 1) & 63) * TW;
+      var th = tint > 0 ? tint * (1 - v) * (1 - v) * 0.45 : 0, sw = swayX[y];
+      for (x = 0; x < W; x++, o += 4) {
+        var heat = 0, ch = colH[x], k = ch > 0 ? v / ch : 2;
+        if (k < 1) {
+          var xa = (x + sw) & 127, xb = (x + shift2 - sw) & 127;
+          var T = 0.65 * (TEX[r0 + xa] * (1 - fy) + TEX[r1 + xa] * fy) + 0.35 * (TEX[q0 + xb] * (1 - fy2) + TEX[q1 + xb] * fy2);
+          heat = (1 - k) * dens + (T - 0.5) * (0.25 + 0.9 * k);
+          if (heat < 0) heat = 0; else if (heat > 1) heat = 1;
+        }
+        if (th > heat) heat = th;
+        var hi = (heat * 255) | 0;
+        var kk = k * 1.5; if (kk > 1) kk = 1;
+        var ci = heat * (0.55 + 0.6 * kk); if (ci > 1) ci = 1;
+        ci = (ci * 255) | 0;
+        px[o] = LUTC[ci * 3]; px[o + 1] = LUTC[ci * 3 + 1]; px[o + 2] = LUTC[ci * 3 + 2];
+        px[o + 3] = hi === 0 ? 0 : LUTA[hi] * (1 - mask[o >> 2]);
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
+
+  var cur = { h: 0, a: 0, act: 1, tint: 0, dens: 1 };
+  var from = null, to = null, t0 = 0, ph = 4, lastTs = 0, lastDraw = 0;
+  var running = false, raf = 0, draws = 0, slideNo = 0;
+
+  function levelOf(n) {
+    var r = FIRE_LEVELS[Math.min(Math.max(n, 1), FIRE_LEVELS.length) - 1];
+    return { h: r[0], a: r[1], act: r[2], tint: r[3], dens: r[4] };
+  }
+  function copyCur() { return { h: cur.h, a: cur.a, act: cur.act, tint: cur.tint, dens: cur.dens }; }
+  function lerpTo(t) {
+    var e = t * t * (3 - 2 * t);
+    for (var k in cur) cur[k] = from[k] + (to[k] - from[k]) * e;
+  }
+  function reduced() { return !!(mq && mq.matches); }
+  function hide() { ctx.clearRect(0, 0, W, H); cv.style.opacity = "0"; cv.style.visibility = "hidden"; }
+  function show() { cv.style.opacity = String(cur.a); cv.style.visibility = "visible"; }
+  function active() { return cur.a > 0.002 || to.a > 0; }
+
+  function frame(ts) {
+    raf = 0;
+    if (!running) return;
+    if (document.hidden) { running = false; return; }
+    if (ts - lastDraw >= FRAME_MS) {
+      var dt = Math.min(0.1, (ts - (lastTs || ts)) / 1000);
+      lastTs = ts; lastDraw = ts;
+      var t = (ts - t0) / FADE_MS, k;
+      if (t >= 1) { for (k in cur) cur[k] = to[k]; } else lerpTo(Math.max(0, t));
+      if (!active()) { for (k in cur) cur[k] = to[k]; hide(); running = false; return; }
+      ph += dt * cur.act;
+      draw(ph, cur); draws++; show();
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  function start() {
+    if (running || reduced() || document.hidden || !active()) return;
+    running = true; lastTs = 0; lastDraw = 0;
+    raf = requestAnimationFrame(frame);
+  }
+
+  function refreshMask() {
+    buildMask();
+    if (reduced() && cur.a > 0) draw(4, cur);
+  }
+  var rzTimer = 0;
+  window.addEventListener("resize", function () { clearTimeout(rzTimer); rzTimer = setTimeout(refreshMask, 250); });
+
+  function sync() {
+    var n = 1, k;
+    if (window.deck && window.deck.current) n = window.deck.current();
+    else { var a = document.querySelector(".slide.active"); if (a) n = parseInt(a.id.replace(/\D+/g, ""), 10) || 1; }
+    if (n === slideNo) return;
+    slideNo = n;
+    refreshMask(); setTimeout(refreshMask, 420);
+    from = copyCur();
+    to = levelOf(n);
+    t0 = performance.now();
+    if (reduced()) {
+      for (k in cur) cur[k] = to[k];
+      if (cur.a > 0) { draw(4, cur); draws++; show(); } else hide();
+    } else { start(); }
+  }
+
+  var slides = document.querySelectorAll(".slide");
+  if (window.MutationObserver) {
+    var mo = new MutationObserver(sync);
+    for (var i = 0; i < slides.length; i++) mo.observe(slides[i], { attributes: true, attributeFilter: ["class"] });
+  }
+  window.addEventListener("hashchange", sync);
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden || !to) return;
+    from = copyCur(); t0 = performance.now(); start();
+  });
+  if (mq) {
+    var onMq = function () {
+      var n = slideNo; slideNo = 0; sync();
+      if (!reduced()) { from = copyCur(); t0 = performance.now(); start(); }
+      slideNo = n;
+    };
+    if (mq.addEventListener) mq.addEventListener("change", onMq); else if (mq.addListener) mq.addListener(onMq);
+  }
+  /* read-only inspection handle for tuning and testing */
+  window.deckFire = { levels: FIRE_LEVELS, state: function () {
+    return { level: slideNo, cur: cur, running: running, rafPending: raf !== 0, draws: draws, visibility: cv.style.visibility, opacity: cv.style.opacity };
+  } };
+  sync();
 })();
 </script>
 </body>
