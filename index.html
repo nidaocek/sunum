@@ -258,11 +258,10 @@ body.show-notes .notes-panel { display: block; }
 /* chrome */
 .chrome { position: fixed; left: 0; right: 0; bottom: 0; height: 3px; z-index: 10; background: rgba(255,255,255,.04); }
 .chrome i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width 300ms ease; }
-.counter, .brand { position: fixed; bottom: calc(1.2 * var(--uu)); z-index: 10;
+.brand { position: fixed; bottom: calc(1.2 * var(--uu)); z-index: 10;
   font-family: var(--font-serif); font-size: calc(1.05 * var(--uu)); color: var(--faint); letter-spacing: .12em; }
-.counter { right: calc(3 * var(--uu)); }
 .brand { left: calc(3 * var(--uu)); }
-.deck[data-standalone] ~ .chrome, .deck[data-standalone] ~ .counter, .deck[data-standalone] ~ .brand { display: none; }
+.deck[data-standalone] ~ .chrome, .deck[data-standalone] ~ .brand { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .slide, .rise, .flicker, .sparks i { transition: none; animation: none; }
@@ -271,7 +270,7 @@ body.show-notes .notes-panel { display: block; }
   html, body { overflow: visible; height: auto; }
   .deck { position: static; }
   .slide { position: relative; opacity: 1; visibility: visible; transform: none; page-break-after: always; height: 100vh; }
-  .chrome, .counter, .brand, .sparks, .notes-panel { display: none !important; }
+  .chrome, .brand, .sparks, .notes-panel { display: none !important; }
 }
 /* additive rules for the Project 1 deck */
 .card.sm { padding: calc(1.1 * var(--u)) calc(1.3 * var(--u)); gap: calc(0.4 * var(--u)); }
@@ -1406,8 +1405,6 @@ html:not(.js) .s8-bgs { display: none; }
   background: radial-gradient(120% 80% at 50% 105%, rgba(232,116,58,.55) 0%, rgba(210,65,46,.42) 38%, rgba(107,29,20,.34) 78%, rgba(40,10,8,.30) 100%); }
 #slide-10 .s10-flames { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; }
 #slide-10 .s10-dim { position: absolute; inset: 0; background: #000; opacity: 0; }
-#slide-10 .s10-cscrim { position: absolute; right: calc(1.3 * var(--uu)); bottom: calc(.3 * var(--uu)); width: calc(9 * var(--uu)); height: calc(3.6 * var(--uu)); opacity: 0;
-  border-radius: calc(1.2 * var(--uu)); background: #0c0806; box-shadow: 0 0 calc(1.2 * var(--uu)) calc(.8 * var(--uu)) #0c0806, inset 0 0 0 1px rgba(232,116,58,.38); }
 #slide-10 .s10-sw, #slide-10 .s10-lick { transform-origin: 80px 97px; transform-box: view-box; }
 #slide-10 .s10-sw { transform: translateY(100px); }
 #slide-10 .s10-hh, #slide-10 .s10-mh { transform-origin: 150px 150px; transform-box: view-box; }
@@ -1421,7 +1418,6 @@ html:not(.js) .s8-bgs { display: none; }
   #slide-10.active .s10-blaze { animation: s10-blaze 15s linear infinite both; }
   #slide-10.active .s10-wash { animation: s10-wash 15s linear infinite both; }
   #slide-10.active .s10-dim { animation: s10-dim 15s linear infinite both; }
-  #slide-10.active .s10-cscrim { animation: s10-pad 15s linear infinite both; }
   #slide-10.active .s10-pad::before { animation: s10-pad 15s linear infinite both; }
   #slide-10.active .s10-face { animation: s10-glow 15s linear infinite both; }
   #slide-10.active .s10-ring, #slide-10.active .s10-halo { animation: s10-glow2 15s linear infinite both; }
@@ -1529,6 +1525,22 @@ html:not(.js) .s8-bgs { display: none; }
 @keyframes s11-clapL{0%{transform:rotate(-1deg)}16%{transform:rotate(-1deg)}60%{transform:rotate(-38deg)}100%{transform:rotate(-1deg)}}
 @keyframes s11-clapR{0%{transform:rotate(1deg)}16%{transform:rotate(1deg)}60%{transform:rotate(38deg)}100%{transform:rotate(1deg)}}
 @keyframes s11-marks{0%,100%{opacity:0}2%{opacity:.95;transform:scale(.8)}22%{opacity:.5;transform:scale(1.25)}34%{opacity:0;transform:scale(1.35)}}
+/* slide 01 presenter credit */
+#slide-01 .s1-credit { display: flex; flex-direction: column; gap: calc(0.5 * var(--u)); margin-top: calc(0.4 * var(--u));
+  padding-left: calc(1.4 * var(--u)); border-left: calc(0.2 * var(--u)) solid #d9ac55; }
+#slide-01 .s1-credit-by { font-family: var(--font-serif); font-size: calc(1.05 * var(--u)); letter-spacing: .22em;
+  text-transform: uppercase; color: #c39a49; }
+#slide-01 .s1-credit-name { font-family: var(--font-serif); font-style: italic; font-weight: 700; font-size: calc(3 * var(--u));
+  line-height: 1.1; letter-spacing: .02em; color: #d9ac55; align-self: flex-start; padding-right: .1em; }
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  #slide-01 .s1-credit-name { color: transparent; -webkit-text-fill-color: transparent;
+    background-image: linear-gradient(100deg, #d9ac55 0%, #d9ac55 42%, #fff4d6 50%, #d9ac55 58%, #d9ac55 100%);
+    background-size: 300% 100%; background-position: 0% 0; background-repeat: no-repeat;
+    -webkit-background-clip: text; background-clip: text; }
+}
+@keyframes s1-shine { 0% { background-position: 0% 0; } 22% { background-position: 100% 0; } 100% { background-position: 100% 0; } }
+html.js #slide-01.active .s1-credit-name { animation: s1-shine 5.5s linear 1.5s infinite; }
+@media (prefers-reduced-motion: reduce) { html.js #slide-01.active .s1-credit-name { animation: none; } }
 </style>
 </head>
 <body>
@@ -1547,6 +1559,7 @@ html:not(.js) .s8-bgs { display: none; }
         <div class="sub rise d2">by Christopher Marlowe</div>
         <p class="lede rise d3">A doctor of Wittenberg University gives his soul to Lucifer
           in return for twenty-four years of life and a devil as his servant.</p>
+        <div class="s1-credit rise d3"><span class="s1-credit-by">Prepared and presented by</span><span class="s1-credit-name">Nida &Ouml;cek</span></div>
       </div>
       <div style="height:calc(36*var(--u));" class="rise d2">
         <svg class="dg" viewBox="0 0 300 360" aria-hidden="true">
@@ -1839,7 +1852,6 @@ html:not(.js) .s8-bgs { display: none; }
       <g class="s10-embers"><circle class="s10-em" cx="98.2" cy="80.8" r="0.65" fill="#e8743a" style="animation-delay:1.43s;animation-duration:2.84s"/><circle class="s10-em" cx="130.4" cy="81.7" r="0.45" fill="#e8743a" style="animation-delay:0.11s;animation-duration:2.39s"/><circle class="s10-em" cx="61.0" cy="84.3" r="0.55" fill="#e8743a" style="animation-delay:0.22s;animation-duration:2.50s"/><circle class="s10-em" cx="114.2" cy="71.4" r="0.45" fill="#d9ac55" style="animation-delay:0.35s;animation-duration:3.16s"/><circle class="s10-em" cx="26.5" cy="77.3" r="0.45" fill="#e8743a" style="animation-delay:0.00s;animation-duration:3.25s"/><circle class="s10-em" cx="37.0" cy="66.0" r="0.45" fill="#e8743a" style="animation-delay:0.64s;animation-duration:3.35s"/><circle class="s10-em" cx="85.8" cy="79.0" r="0.45" fill="#e8743a" style="animation-delay:2.07s;animation-duration:3.03s"/><circle class="s10-em" cx="149.1" cy="85.0" r="0.55" fill="#e8743a" style="animation-delay:0.79s;animation-duration:2.40s"/><circle class="s10-em" cx="27.6" cy="61.8" r="0.55" fill="#e8743a" style="animation-delay:1.29s;animation-duration:2.92s"/><circle class="s10-em" cx="110.7" cy="61.8" r="0.55" fill="#d9ac55" style="animation-delay:1.06s;animation-duration:2.58s"/></g>
     </svg>
     <div class="s10-dim"></div>
-    <div class="s10-cscrim"></div>
   </div>
   <div class="stage">
     <div class="slide-no s10-pad">10 / 11</div>
@@ -1918,7 +1930,6 @@ html:not(.js) .s8-bgs { display: none; }
 </main>
 
 <div class="chrome" aria-hidden="true"><i id="progressBar"></i></div>
-<div class="counter" id="slideCounter">01 / 11</div>
 <div class="notes-panel" id="notesPanel" aria-live="polite"><b>Speaker notes &middot; N to hide</b><span id="notesText"></span></div>
 
 <script>
@@ -2195,7 +2206,7 @@ html:not(.js) .s8-bgs { display: none; }
     var slide = document.querySelector(".slide.active");
     var roots = [];
     if (slide) roots.push([slide, slide.parentElement]);
-    var extra = document.querySelectorAll(".counter, .brand");
+    var extra = document.querySelectorAll(".brand");
     for (var i = 0; i < extra.length; i++) roots.push([extra[i], document.body]);
     for (i = 0; i < roots.length; i++) {
       var w = document.createTreeWalker(roots[i][0], NodeFilter.SHOW_TEXT), n;
