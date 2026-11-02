@@ -2,7 +2,7 @@
 
 **Live presentation:** https://nidaocek.github.io/sunum/
 
-A five-minute English presentation, prepared and presented by **Nida Ocek** for the B2 English preparatory programme at Istanbul Arel University (Module 1 book project).
+A five-minute English presentation, prepared and presented by **Nida &Ouml;cek** for the B2 English preparatory programme at Istanbul Arel University (Module 1 book project).
 
 ## What this is
 
@@ -61,4 +61,4 @@ Some slides are interactive:
 ## Credits
 
 - Story: *Doctor Faustus* by Christopher Marlowe (late 16th century), as told in a graded reader edition.
-- Presentation and narration: Nida Ocek.
+- Presentation and narration: Nida &Ouml;cek.
