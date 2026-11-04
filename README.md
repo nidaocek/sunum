@@ -22,14 +22,12 @@ The book is a simplified (graded reader) edition of *Doctor Faustus* by Christop
 | 1 | The Tragedy of Doctor Faustus | Title, author, presenter |
 | 2 | Who is who? | Main characters |
 | 3 | People Faustus meets | Other characters |
-| 4 | Where the story happens | Route map of the places, Parts I to IX |
-| 5 | The choice | Parts One and Two: why Faustus chooses magic |
-| 6 | The contract | Part Three: the agreement signed in blood |
-| 7 | Doubts | Part Four: doubts and the Seven Deadly Sins |
-| 8 | Travels and tricks | Parts Five to Seven: the universe, Rome, the Emperor and more |
-| 9 | Helen and the Old Man | Part Eight |
-| 10 | The last hour | Part Nine: midnight |
-| 11 | Summary | The story in four steps, then questions |
+| 4 | The choice | Parts One and Two: why Faustus chooses magic |
+| 5 | The contract | Part Three: the agreement signed in blood |
+| 6 | Doubts | Part Four: doubts and the Seven Deadly Sins |
+| 7 | Travels and tricks | Parts Five to Seven: the universe, Rome, the Emperor and more |
+| 8 | The last hour | Part Nine: midnight |
+| 9 | Summary | The story in four steps, then questions |
 
 ## How to use it
 
@@ -45,14 +43,15 @@ Open the live link in a modern browser (tested in Microsoft Edge) and press F11 
 On a phone or tablet, swipe left or right.
 
 Some slides are interactive:
-- **Slides 5, 6 and 7:** move the mouse over a card to play its animation.
-- **Slide 8:** click an event heading to show its picture behind the text.
-- **Slides 3 and 9:** the scenes play on their own, one after another.
+- **Slide 2:** move the mouse over a character card to bring its picture forward.
+- **Slide 6:** move the mouse over a sin to light its ring of fire; the figures in the background follow the mouse.
+- **Slide 7:** click an event heading to show its picture behind the text.
+- **Slides 3, 4, 5, 8 and 9:** the scenes play on their own.
 
 ## How it is made
 
 - One self-contained file, `index.html`, with all the CSS, JavaScript and inline SVG drawings. No frameworks, no external fonts, no downloads.
-- `img/characters/` holds the character drawings used on slide 2.
+- `img/characters/` holds the first versions of the character drawings. The current deck draws the slide 2 pictures inside `index.html` and no longer loads these files.
 - All illustrations are original drawings made for this presentation, in a flat storybook style. They are not copied from the book.
 - The animations run only on the slide on screen. With the system setting "reduce motion" turned on, they show still pictures instead.
 - The background fire grows slowly through the story and is strongest in "The last hour".
